@@ -1,6 +1,3 @@
-const fs = require('fs');
-const path = require('path');
-
 module.exports.config = {
   name: 'convert',
   version: '1.0.0',
@@ -20,15 +17,18 @@ module.exports.run = async function({ api, event, args }) {
   }
 
   try {
-    const commandName = args[0];
-    const commandPath = path.join(__dirname, `${commandName}.js`);
+    const code = args.join(' ');
+    const context = {
+      axios: require('axios'),
+      fs: require('fs'),
+      path: require('path'),
+      global: { utils: { getStreamFromURL: () => {} } }, // Mocked function for global.utils.getStreamFromURL
+      api,
+      event,
+      message: { reply: () => {} }, // Mocked reply function
+    };
+    const command = eval(`(${code})`);
 
-    if (!fs.existsSync(commandPath)) {
-      api.sendMessage('❎ | Command not found.', event.threadID, event.messageID);
-      return;
-    }
-
-    const command = require(commandPath);
     const convertedCommand = {
       config: {
         name: command.config.name,
