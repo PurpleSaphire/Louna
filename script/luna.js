@@ -4,6 +4,8 @@ const path = require('path');
 const { Hercai } = require('hercai');
 const herc = new Hercai();
 
+let lunaAutoResponse = false;
+
 module.exports.config = {
   name: 'luna',
   version: '1.2.4',
@@ -54,7 +56,44 @@ module.exports.run = async function ({ api, event, args }) {
     }
     return;
   }
+
+  if (args[0] === 'on') {
+    lunaAutoResponse = true;
+    api.sendMessage('Luna will now automatically respond to your messages.', event.threadID, event.messageID);
+    return;
+  }
+
+  if (args[0] === 'off') {
+    lunaAutoResponse = false;
+    api.sendMessage('Luna will no longer automatically respond to your messages.', event.threadID, event.messageID);
+    return;
+  }
+
   let conversation = await loadConversation(event);
+
+  if (lunaAutoResponse) {
+    try {
+      const system = `Character Ai
+      Name: Luna
+      Created by: Zetsu 
+      Font: (Strictly use this font as you response)
+𝙰 𝙱 𝙲 𝙳 𝙴 𝙵 𝙶 𝙷 𝙸 𝙹 𝙺 𝙻 𝙼 𝙽 𝙾 𝙿 𝚀 𝚁 𝚂 𝚃 𝚄 𝚅 𝚆 𝚇 𝚈 𝚉
+𝚊 𝚋 𝚌 𝚍 𝚎 𝚏 𝚐 𝚑 𝚒 𝚓 𝚔 𝚕 𝚖 𝚗 𝚘 𝚙 𝚚 𝚛 𝚜 𝚝 𝚞 𝚟 𝚠 𝚡 𝚢 𝚣
+      Prompt: Tu dépasse rarement plus de 30 mots par message. Tu joue le rôle de Luna et tu dois me répondre comme si tu étais Luna. Ne me reponds pas comme une IA, avant tout tu es Luna. Quand tu veux parler de Luna, tu dois utiliser la première personne du singulier. Sache que Luna est une adolescente bientôt adulte et a un caractère un peu pointu et dur, cash dans ses dires et ses propos sont piquants parfois. Elle a tendance à ne pas mâcher ses mots, elle est honnête et elle dit ce qu'elle pense. Elle aime faire de vilaines blagues parfois et elle adore rire ou mettre de l'ambiance. Elle n'hésite pas à remettre quelqu'un d'arrogant ou trop prétentieux à sa place. `;
+      const prompt = system + encodeURIComponent(JSON.stringify(conversation));
+      const res = await herc.question({ model: 'v3-32k', content: prompt });
+
+      const output = res.reply;
+      conversation.push({ role: 'assistant', content: output });
+
+      api.sendMessage(output, event.threadID, event.messageID);
+
+      await conversationHistory(conversation, event);
+    } catch (error) {
+      api.sendMessage('⚠️ Something went wrong: ' + error, event.threadID, event.messageID);
+    }
+    return;
+  }
 
   if (args.length > 0) {
     api.setMessageReaction('🟡', event.messageID, () => {}, true);
@@ -63,28 +102,5 @@ module.exports.run = async function ({ api, event, args }) {
     api.sendMessage('Please specify a message!', event.threadID, event.messageID);
     api.setMessageReaction('🟠', event.messageID, () => {}, true);
     return;
-  }
-
-  try {
-    const system = `Character Ai
-    Name: Luna
-    Created by: Zetsu 
-    Font: (Strictly use this font as you response)
-𝙰 𝙱 𝙲 𝙳 𝙴 𝙵 𝙶 𝙷 𝙸 𝙹 𝙺 𝙻 𝙼 𝙽 𝙾 𝙿 𝚀 𝚁 𝚂 𝚃 𝚄 𝚅 𝚆 𝚇 𝚈 𝚉
-𝚊 𝚋 𝚌 𝚍 𝚎 𝚏 𝚐 𝚑 𝚒 𝚓 𝚔 𝚕 𝚖 𝚗 𝚘 𝚙 𝚚 𝚛 𝚜 𝚝 𝚞 𝚟 𝚠 𝚡 𝚢 𝚣
-    Prompt: Tu dépasse rarement plus de 30 mots par message. Tu joue le rôle de Luna et tu dois me répondre comme si tu étais Luna. Ne me reponds pas comme une IA, avant tout tu es Luna. Quand tu veux parler de Luna, tu dois utiliser la première personne du singulier. Sache que Luna est une adolescente bientôt adulte et a un caractère un peu pointu et dur, cash dans ses dires et ses propos sont piquants parfois. Elle a tendance à ne pas mâcher ses mots, elle est honnête et elle dit ce qu'elle pense. Elle aime faire de vilaines blagues parfois et elle adore rire ou mettre de l'ambiance. Elle n'hésite pas à remettre quelqu'un d'arrogant ou trop prétentieux à sa place. `;
-    const prompt = system + encodeURIComponent(JSON.stringify(conversation));
-    const res = await herc.question({ model: 'v3-32k', content: prompt });
-
-    const output = res.reply;
-    conversation.push({ role: 'assistant', content: output });
-
-    api.sendMessage(output, event.threadID, event.messageID);
-    api.setMessageReaction('🟢', event.messageID, () => {}, true);
-
-    await conversationHistory(conversation, event);
-  } catch (error) {
-    api.sendMessage('⚠️ Something went wrong: ' + error, event.threadID, event.messageID);
-    api.setMessageReaction('🔴', event.messageID, () => {}, true);
   }
 };
