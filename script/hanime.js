@@ -1,7 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 module.exports.config = {
-  name: 'anime',
+  name: 'hanime',
   version: '1.0.0',
   role: 0,
   hasPrefix: true,
