@@ -5,7 +5,7 @@ let url = "https://ai-tools.replit.app";
 let f = __dirname+'/cache/sdxl.png';
 
 module.exports.config = {
-		name: "sdxl",
+		name: "xl",
 		version: "1.0.0",
 		role: 0,
 		credits: "Deku",
